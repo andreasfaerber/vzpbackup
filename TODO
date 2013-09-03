@@ -1,0 +1,9 @@
+TODOs for vzplbackup
+
+- More error handling and precaution
+-- Detect if a container is actually using ploop as storage device
+- Hook-Script to run prior creating the snapshot (automysqlbackup, etc)
+- Allow exclusion of containers while running with --all switch
+- Allow gzip / pigz compression of backups
+- Allow "vzctl compact" prior backup to reduce space used (good idea!?)
+- and more
