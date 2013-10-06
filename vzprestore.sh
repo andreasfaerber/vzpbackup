@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# vzploorestore.sh
+# vzprestore.sh
 #
 # A script meant to restore backups that have been taken with
 # vzploopbackup. The script will create the relevant directories
@@ -14,7 +14,7 @@
 
 ##
 ## DEFAULTS
-## 
+##
 
 ARCHIVE=
 CONTAINER=
@@ -58,7 +58,7 @@ ARC_EXT=${ARCHIVE##*.}
 if [ -z $ARCHIVE -o -z $CONTAINER ]; then
     echo "Usage: $0 --archive=<Filename> --container=<CTID to restore to> [--confirm=<yes/no>]"
     echo "Defaults:"
-    echo -e "Archive:\t\tNONE" 
+    echo -e "Archive:\t\tNONE"
     echo -e "Container:\t\tNONE"
     echo
     echo "You need to give at least --archive and --container as arguments"

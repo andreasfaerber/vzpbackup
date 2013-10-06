@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# vzploobackup.sh
+# vzpbackup.sh
 #
 # A script to backup the containers running on an OpenVZ host.
 # The container needs to utilize ploop as disk storage.
@@ -20,7 +20,7 @@
 
 ##
 ## DEFAULTS
-## 
+##
 
 BACKUP_DIR=/store/vzpbackup/
 SUSPEND=no
@@ -38,24 +38,24 @@ for i in "$@"
 do
 case $i in
     --help)
-    echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--all] <CTID> <CTID>"
-    echo "Defaults:"
-    echo -e "BACKUP_DIR:\t\t$BACKUP_DIR"
-    echo -e "SUSPEND:\t\t$SUSPEND"
-    exit 0;
+		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--all] <CTID> <CTID>"
+		echo "Defaults:"
+		echo -e "BACKUP_DIR:\t\t$BACKUP_DIR"
+		echo -e "SUSPEND:\t\t$SUSPEND"
+		exit 0;
     ;;
     --suspend=*)
-    SUSPEND=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    	SUSPEND=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     --backup-dir=*)
-    BACKUP_DIR=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    	BACKUP_DIR=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     --all)
-    CTIDS=`vzlist -Hoctid`
+    	CTIDS=`vzlist -Hoctid`
     ;;
     *)
-    # Parse CTIDs here
-    CTIDS=$CTIDS" "$i
+		# Parse CTIDs here
+		CTIDS=$CTIDS" "$i
     ;;
 esac
 done
@@ -78,23 +78,28 @@ do
 
 CTID=$i
 
-echo "Backing up CTID: $CTID"
+# Check if the VE exists
+if grep -w "$CTID" <<< `vzlist -Hoctid` &> /dev/null; then
+	echo "Backing up CTID: $CTID"
 
-ID=$(uuidgen)
-VE_PRIVATE=$(VEID=$CTID; source /etc/vz/vz.conf; source /etc/vz/conf/$CTID.conf; echo $VE_PRIVATE)
- 
-# Take CT snapshot with parameters
-vzctl snapshot $CTID --id $ID $CMDLINE
- 
-# Copy the backup somewhere safe
-# We copy the whole directory which then also includes
-# a possible the dump (while being suspended) and container config
-cd $VE_PRIVATE
-HNAME=`vzlist -Hohostname $CTID`
+	ID=$(uuidgen)
+	VE_PRIVATE=$(VEID=$CTID; source /etc/vz/vz.conf; source /etc/vz/conf/$CTID.conf; echo $VE_PRIVATE)
 
-tar cvf $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar .
+	# Take CT snapshot with parameters
+	vzctl snapshot $CTID --id $ID $CMDLINE
 
-# Delete (merge) the snapshot
-vzctl snapshot-delete $CTID --id $ID
+	# Copy the backup somewhere safe
+	# We copy the whole directory which then also includes
+	# a possible the dump (while being suspended) and container config
+	cd $VE_PRIVATE
+	HNAME=`vzlist -Hohostname $CTID`
+
+	tar cvf $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar .
+
+	# Delete (merge) the snapshot
+	vzctl snapshot-delete $CTID --id $ID
+else
+	echo "WARNING: No CT found for ID $CTID. Skipping..."
+fi
 
 done
