@@ -22,8 +22,9 @@
 ## DEFAULTS
 ##
 
-BACKUP_DIR=/store/vzpbackup/
 SUSPEND=no
+BACKUP_DIR=/store/vzpbackup/
+COMPRESS=no
 BACKUP_ARGS=
 
 ##
@@ -38,10 +39,11 @@ for i in "$@"
 do
 case $i in
     --help)
-		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--all] <CTID> <CTID>"
+		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--compress=<no/gz/xz>] [--all] <CTID> <CTID>"
 		echo "Defaults:"
-		echo -e "BACKUP_DIR:\t\t$BACKUP_DIR"
 		echo -e "SUSPEND:\t\t$SUSPEND"
+		echo -e "BACKUP_DIR:\t\t$BACKUP_DIR"
+		echo -e "COMPRESS:\t\t$COMPRESS"
 		exit 0;
     ;;
     --suspend=*)
@@ -50,6 +52,9 @@ case $i in
     --backup-dir=*)
     	BACKUP_DIR=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
+    --compress=*)
+		COMPRESS=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+	;;
     --all)
     	CTIDS=`vzlist -Hoctid`
     ;;
@@ -60,8 +65,9 @@ case $i in
 esac
 done
 
-echo BACKUP_DIR: $BACKUP_DIR
 echo SUSPEND: $SUSPEND
+echo BACKUP_DIR: $BACKUP_DIR
+echo COMPRESS: $COMPRESS
 echo CTIDs to backup: $CTIDS
 
 if [ "x$SUSPEND" != "xyes" ]; then
@@ -95,6 +101,16 @@ if grep -w "$CTID" <<< `vzlist -Hoctid` &> /dev/null; then
 	HNAME=`vzlist -Hohostname $CTID`
 
 	tar cvf $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar .
+
+	# Compress the archive if wished
+	if [ "$COMPRESS" -ne "no" ]; then
+		if [ "$COMPRESS" -eq "gz" ]; then
+			gunzip --compress $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
+		fi
+		if [ "$COMPRESS" -eq "xz" ]; then
+			xz --compress $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
+		fi
+	fi
 
 	# Delete (merge) the snapshot
 	vzctl snapshot-delete $CTID --id $ID
