@@ -32,23 +32,23 @@ for i in "$@"
 do
 case $i in
     --help)
-    echo "Usage: $0 --archive=<Filename> --container=<CTID to restore to> [--confirm=<yes/no>]"
-    echo "Defaults:"
-    echo -e "Archive:\t\tNONE"
-    echo -e "Container:\t\tNONE"
-    exit 0;
+	    echo "Usage: $0 --archive=<Filename> --container=<CTID to restore to> [--confirm=<yes/no>]"
+	    echo "Defaults:"
+	    echo -e "Archive:\t\tNONE"
+	    echo -e "Container:\t\tNONE"
+	    exit 0;
     ;;
     --archive=*)
-    ARCHIVE=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    	ARCHIVE=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     --container=*)
-    CONTAINER=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    	CONTAINER=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     --confirm=*)
-    CONFIRM=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    	CONFIRM=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     *)
-    # Parse CTIDs here
+    	# Parse CTIDs here
     ;;
 esac
 done
@@ -142,6 +142,8 @@ cd $VE_PRIVATE
 echo "Extracting backup archive:"
 if [ $ARC_EXT == "gz" ]; then
     TAR_ARGS="-zxvf"
+elif [ $ARC_EXT == "xz" ]; then
+	TAR_ARGS="-xJf"
 else
     TAR_ARGS="-xvf"
 fi
@@ -160,6 +162,5 @@ if [ -f $DUMPFILE ]; then
 else
     echo "No dump file found"
 fi
-
 
 vzlist $CTID
