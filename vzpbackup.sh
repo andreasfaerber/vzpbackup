@@ -105,7 +105,7 @@ if grep -w "$CTID" <<< `vzlist -Hoctid` &> /dev/null; then
 	# Compress the archive if wished
 	if [ "$COMPRESS" -ne "no" ]; then
 		if [ "$COMPRESS" -eq "gz" ]; then
-			gunzip --compress $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
+			gzip $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
 		fi
 		if [ "$COMPRESS" -eq "xz" ]; then
 			xz --compress $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
