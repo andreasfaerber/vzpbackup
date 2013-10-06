@@ -140,7 +140,9 @@ echo "cd into $VE_PRIVATE"
 cd $VE_PRIVATE
 
 echo "Extracting backup archive:"
-if [ $ARC_EXT == "gz" ]; then
+if [ $ARC_EXT == "bz2" ]; then
+	TAR_ARGS="-xvjf"
+elif [ $ARC_EXT == "gz" ]; then
     TAR_ARGS="-zxvf"
 elif [ $ARC_EXT == "xz" ]; then
 	TAR_ARGS="-xJf"

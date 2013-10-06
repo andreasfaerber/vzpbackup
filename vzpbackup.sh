@@ -39,7 +39,7 @@ for i in "$@"
 do
 case $i in
     --help)
-		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--compress=<no/gz/xz>] [--all] <CTID> <CTID>"
+		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--compress=<no/bz/gz/xz>] [--all] <CTID> <CTID>"
 		echo "Defaults:"
 		echo -e "SUSPEND:\t\t$SUSPEND"
 		echo -e "BACKUP_DIR:\t\t$BACKUP_DIR"
@@ -104,10 +104,11 @@ if grep -w "$CTID" <<< `vzlist -Hoctid` &> /dev/null; then
 
 	# Compress the archive if wished
 	if [ "$COMPRESS" -ne "no" ]; then
-		if [ "$COMPRESS" -eq "gz" ]; then
+		if [ "$COMPRESS" -eq "bz" ]; then
+			bzip2 --compress $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
+		elif [ "$COMPRESS" -eq "gz" ]; then
 			gzip $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
-		fi
-		if [ "$COMPRESS" -eq "xz" ]; then
+		elif [ "$COMPRESS" -eq "xz" ]; then
 			xz --compress $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
 		fi
 	fi
