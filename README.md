@@ -7,15 +7,15 @@ The scripts are meant to provide a backup solution to backup
 containers that use ploop storage. Traditional storage is
 not supported by the scripts. The scripts are based on the
 OpenVZ wiki page regarding image backup:
-http://openvz.org/Ploop/Backup
+[http://openvz.org/Ploop/Backup](http://openvz.org/Ploop/Backup)
 
-BACKUP:
+## BACKUP
 
-Usage: vzpbackup.sh [--suspend=<yes/no>] [--backup-dir=<dir>] [--all] CTID CTID
+    vzpbackup.sh [--suspend=<yes/no>] [--backup-dir=<dir>] [--compress=<no/bz/gz/xz>] [--all] CTID CTID
 
 Backup a container with container ID 200:
 
-vzpbackup.sh [Options] 200
+    vzpbackup.sh [Options] 200
 
 Options:
 
@@ -32,6 +32,11 @@ Options:
 	Parameter to change the default backup directory. Either
 	use the parameter or change the script.
 
+--compress=<Compression> (Default: no(ne))
+
+    Allows you to compress the resulting archive file using either
+    bzip2, gzip or xz to save some disk space.
+
 --all
 
 	This will backup _all_ containers that are currently
@@ -39,13 +44,13 @@ Options:
 	"vzlist -Hoctid"). Currently there is no option to
 	exclude specific CTIDs from the backup.
 
-RESTORE:
+## Restore
 
-Usage: vzprestore.sh --archive=<ContainerBackupArchive> --container=<Container to restore to>
+    vzprestore.sh --archive=<ContainerBackupArchive> --container=<Container to restore to>
 
 Restore a backup to a new container 250:
 
-vzprestore.sh --archive=/store/vzpbackup/vzpbackup_200_test.host.tar --container=250
+    vzprestore.sh --archive=/store/vzpbackup/vzpbackup_200_test.host.tar --container=250
 
 Options:
 
