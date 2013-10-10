@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# vzploorestore.sh
+# vzprestore.sh
 #
 # A script meant to restore backups that have been taken with
 # vzploopbackup. The script will create the relevant directories
@@ -14,7 +14,7 @@
 
 ##
 ## DEFAULTS
-## 
+##
 
 ARCHIVE=
 CONTAINER=
@@ -53,19 +53,19 @@ case $i in
     exit 0;
     ;;
     --archive=*)
-    ARCHIVE=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    	ARCHIVE=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     --container=*)
-    CONTAINER=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    	CONTAINER=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     --confirm=*)
-    CONFIRM=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    	CONFIRM=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     --delete-backup-snapshot=*)
     DELETE_BACKUP_SNAPSHOT=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     *)
-    # Parse CTIDs here
+    	# Parse CTIDs here
     ;;
 esac
 done
@@ -151,8 +151,12 @@ echo "cd into $VE_PRIVATE"
 cd $VE_PRIVATE
 
 echo "Extracting backup archive:"
-if [ $ARC_EXT == "gz" ]; then
+if [ $ARC_EXT == "bz2" ]; then
+	TAR_ARGS="-xvjf"
+elif [ $ARC_EXT == "gz" ]; then
     TAR_ARGS="-zxvf"
+elif [ $ARC_EXT == "xz" ]; then
+	TAR_ARGS="-xJf"
 else
     TAR_ARGS="-xvf"
 fi
