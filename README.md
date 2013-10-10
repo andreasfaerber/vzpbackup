@@ -57,6 +57,16 @@ Options:
 
 	Specify the container that the backup shall be restored to.
 
+--confirm=<yes/no>
+
+	Confirm what is being done prior execution.
+
+--delete-backup-snapshot=<yes/no>
+
+	Delete (switch to it and delete it) the snapshot created during backup creation.
+        Note: Any memory dumps will be lost if you do it at this stage after restoring
+        the container.
+
 
 
 Author: Andreas Faerber, af@maeh.org
