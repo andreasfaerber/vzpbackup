@@ -19,6 +19,7 @@
 ARCHIVE=
 CONTAINER=
 CONFIRM=yes
+DELETE_BACKUP_SNAPSHOT=no
 
 ##
 ## VARIABLES
@@ -28,14 +29,27 @@ TIMESTAMP=`date '+%Y%m%d%H%M%S'`
 
 ## VARIABLES END
 
+show_usage() {
+    echo "Usage: $0 --archive=<Filename> --container=<CTID to restore to> [--confirm=<yes/no>] [--delete-backup-snapshot=<yes/no>]"
+    echo "Defaults:"
+    echo -e "Archive:\t\t\tNONE"
+    echo -e "Container:\t\t\tNONE"
+    echo -e "Confirm:\t\t\tYes"
+    echo -e "Delete Backup Snapshot:\t\tNo"
+    echo
+    echo "Note: Deleting the backup snapshot causes a switch to and a deletion"
+    echo "      of the snapshot taken during backup. Doing so will cause any"
+    echo "      running container to be rebooted. You will not be able to"
+    echo "      resume the container from a suspended state."
+    echo
+    echo "You need to give at least --archive and --container as arguments"
+}
+
 for i in "$@"
 do
 case $i in
     --help)
-    echo "Usage: $0 --archive=<Filename> --container=<CTID to restore to> [--confirm=<yes/no>]"
-    echo "Defaults:"
-    echo -e "Archive:\t\tNONE"
-    echo -e "Container:\t\tNONE"
+    show_usage;
     exit 0;
     ;;
     --archive=*)
@@ -47,6 +61,9 @@ case $i in
     --confirm=*)
     CONFIRM=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
+    --delete-backup-snapshot=*)
+    DELETE_BACKUP_SNAPSHOT=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    ;;
     *)
     # Parse CTIDs here
     ;;
@@ -55,13 +72,8 @@ done
 
 ARC_EXT=${ARCHIVE##*.}
 
-if [ -z $ARCHIVE -o -z $CONTAINER ]; then
-    echo "Usage: $0 --archive=<Filename> --container=<CTID to restore to> [--confirm=<yes/no>]"
-    echo "Defaults:"
-    echo -e "Archive:\t\tNONE" 
-    echo -e "Container:\t\tNONE"
-    echo
-    echo "You need to give at least --archive and --container as arguments"
+if [ "x"$ARCHIVE == "x" -o "x"$CONTAINER == "x" ]; then
+    show_usage;
     exit 0;
 fi
 
@@ -76,7 +88,6 @@ echo -e "Confirm restore:\t\t$CONFIRM"
 echo
 
 CTID=$CONTAINER
-ID=$(uuidgen)
 VE_PRIVATE=$(VEID=$CTID; source /etc/vz/vz.conf; echo $VE_PRIVATE)
 VE_ROOT=$(VEID=$CTID; source /etc/vz/vz.conf; echo $VE_ROOT)
 VE_DUMP=$(VEID=$CTID; source /etc/vz/vz.conf; echo $DUMPDIR)
@@ -147,13 +158,16 @@ else
 fi
 tar $TAR_ARGS $ARCHIVE
 
-SRC_VE_CONF=$(ls -1 dump/*.ve.conf)
+BACKUP_ID=$(cat $VE_PRIVATE/vzpbackup_snapshot)
+echo BACKUP_ID: $BACKUP_ID
+SRC_VE_CONF="dump/{$BACKUP_ID}.ve.conf"
 echo "SRC VE CONF: $SRC_VE_CONF"
 mv $SRC_VE_CONF /etc/vz/conf/$CTID.conf
 
 # Look for possible dump
 DUMPFILE=${SRC_VE_CONF%.*.*}
 echo DUMPFILE: $DUMPFILE
+ls -la $DUMPFILE
 if [ -f $DUMPFILE ]; then
     echo "Found possible dump file.. moving it to $VE_DUMP"
     mv $DUMPFILE $VE_DUMP/Dump.$CTID
@@ -161,5 +175,10 @@ else
     echo "No dump file found"
 fi
 
+if [ "x"$DELETE_BACKUP_SNAPSHOT == "xyes" ]; then
+    echo "Deleting backup snapshot.."
+    vzctl snapshot-switch $CTID --id $BACKUP_ID
+    vzctl snapshot-delete $CTID --id $BACKUP_ID
+fi
 
 vzlist $CTID
