@@ -24,7 +24,6 @@
 
 BACKUP_DIR=/store/vzpbackup/
 SUSPEND=no
-BACKUP_ARGS=
 
 ##
 ## VARIABLES
@@ -82,7 +81,8 @@ echo "Backing up CTID: $CTID"
 
 ID=$(uuidgen)
 VE_PRIVATE=$(VEID=$CTID; source /etc/vz/vz.conf; source /etc/vz/conf/$CTID.conf; echo $VE_PRIVATE)
- 
+
+echo $ID > $VE_PRIVATE/vzpbackup_snapshot
 # Take CT snapshot with parameters
 vzctl snapshot $CTID --id $ID $CMDLINE
  
