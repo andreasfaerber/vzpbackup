@@ -171,7 +171,6 @@ mv $SRC_VE_CONF /etc/vz/conf/$CTID.conf
 # Look for possible dump
 DUMPFILE=${SRC_VE_CONF%.*.*}
 echo DUMPFILE: $DUMPFILE
-ls -la $DUMPFILE
 if [ -f $DUMPFILE ]; then
     echo "Found possible dump file.. moving it to $VE_DUMP"
     mv $DUMPFILE $VE_DUMP/Dump.$CTID
