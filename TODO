@@ -5,6 +5,4 @@ TODOs for vzplbackup
 - Hook-Script to run prior creating the snapshot (automysqlbackup, etc)
 - Allow exclusion of containers while running with --all switch
 - Allow "vzctl compact" prior backup to reduce space used (good idea!?)
-- Amend VE_ROOT and VE_PRIVATE in restored configuration to make sure
-  the config matches with the directory it got restored to
 - and more
