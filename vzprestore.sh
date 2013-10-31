@@ -26,16 +26,18 @@ DELETE_BACKUP_SNAPSHOT=no
 ##
 
 TIMESTAMP=`date '+%Y%m%d%H%M%S'`
+VZDIR=
 
 ## VARIABLES END
 
 show_usage() {
-    echo "Usage: $0 --archive=<Filename> --container=<CTID to restore to> [--confirm=<yes/no>] [--delete-backup-snapshot=<yes/no>]"
+    echo "Usage: $0 --archive=<Filename> --container=<CTID to restore to> [--vzdir=<Directory to restore VE_PRIVATE and VE_ROOT to>] [--confirm=<yes/no>] [--delete-backup-snapshot=<yes/no>]"
     echo "Defaults:"
     echo -e "Archive:\t\t\tNONE"
     echo -e "Container:\t\t\tNONE"
     echo -e "Confirm:\t\t\tYes"
-    echo -e "Delete Backup Snapshot:\t\tNo"
+    echo -e "Delete Backup Snapshot:\t\tNo" 
+    echo -e "VZ Directory (for VE_ROOT and VE_PRIVATE):\tGlobal Default"
     echo
     echo "Note: Deleting the backup snapshot causes a switch to and a deletion"
     echo "      of the snapshot taken during backup. Doing so will cause any"
@@ -51,6 +53,9 @@ case $i in
     --help)
     show_usage;
     exit 0;
+    ;;
+    --vzdir=*)
+    	VZDIR=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     --archive=*)
     	ARCHIVE=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
@@ -82,15 +87,22 @@ if [ ! -f $ARCHIVE ]; then
     exit 1;
 fi
 
+CTID=$CONTAINER
+if [ "x"$VZDIR == "x" ]; then
+    VE_PRIVATE=$(VEID=$CTID; source /etc/vz/vz.conf; echo $VE_PRIVATE)
+    VE_ROOT=$(VEID=$CTID; source /etc/vz/vz.conf; echo $VE_ROOT)
+else
+    VE_PRIVATE=$VZDIR/private/$CTID
+    VE_ROOT=$VZDIR/root/$CTID
+fi
+VE_DUMP=$(VEID=$CTID; source /etc/vz/vz.conf; echo $DUMPDIR)
+
 echo -e "Archive to restore:\t\t$ARCHIVE"
 echo -e "Container to restore to:\t\t$CONTAINER"
 echo -e "Confirm restore:\t\t$CONFIRM"
+echo -e "Restoring VZ to:\t\t$VZDIR"
 echo
 
-CTID=$CONTAINER
-VE_PRIVATE=$(VEID=$CTID; source /etc/vz/vz.conf; echo $VE_PRIVATE)
-VE_ROOT=$(VEID=$CTID; source /etc/vz/vz.conf; echo $VE_ROOT)
-VE_DUMP=$(VEID=$CTID; source /etc/vz/vz.conf; echo $DUMPDIR)
 
 echo "Pre-Restore Checks.."
 echo -n "Checking if container private directory ($VE_PRIVATE) already exists.."
@@ -120,7 +132,7 @@ if [ -d "/etc/vz/conf/$CTID.conf" ]; then
     exit 0;
 else
     echo "no"
-    echo "/etc/vz/conf/$VEID.conf will be restored from backup"
+    echo "/etc/vz/conf/$CTID.conf will be restored from backup"
 fi
 
 echo
@@ -131,6 +143,8 @@ echo "mkdir $VE_PRIVATE"
 echo "cd $VE_PRIVATE"
 echo "Extract backup archive into $VE_PRIVATE"
 echo "Create container config /etc/vz/conf/$CTID.conf"
+echo "Amend container config VE_ROOT: $VE_ROOT"
+echo "Amend container config VE_PRIVATE: $VE_PRIVATE"
 echo
 
 if [ "x"$CONFIRM == "xyes" ]; then
@@ -166,7 +180,11 @@ BACKUP_ID=$(cat $VE_PRIVATE/vzpbackup_snapshot)
 echo BACKUP_ID: $BACKUP_ID
 SRC_VE_CONF="dump/{$BACKUP_ID}.ve.conf"
 echo "SRC VE CONF: $SRC_VE_CONF"
-mv $SRC_VE_CONF /etc/vz/conf/$CTID.conf
+mv $SRC_VE_CONF /etc/vz/conf/$CTID.conf.new
+egrep -v '^(VE_ROOT|VE_PRIVATE)' /etc/vz/conf/$CTID.conf.new > /etc/vz/conf/$CTID.conf
+echo "VE_ROOT=$VE_ROOT" >> /etc/vz/conf/$CTID.conf
+echo "VE_PRIVATE=$VE_PRIVATE" >> /etc/vz/conf/$CTID.conf
+rm $SRC_VE_CONF /etc/vz/conf/$CTID.conf.new
 
 # Look for possible dump
 DUMPFILE=${SRC_VE_CONF%.*.*}

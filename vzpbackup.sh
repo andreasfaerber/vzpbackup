@@ -31,6 +31,8 @@ COMPRESS=no
 ##
 
 TIMESTAMP=`date '+%Y%m%d%H%M%S'`
+VZLIST_CMD=/usr/sbin/vzlist
+VZCTL_CMD=/usr/sbin/vzctl
 
 ## VARIABLES END
 
@@ -55,7 +57,7 @@ case $i in
 		COMPRESS=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
 	;;
     --all)
-    	CTIDS=`vzlist -a -Hoctid`
+    	CTIDS=`$VZLIST_CMD -a -Hoctid`
     ;;
     *)
 		# Parse CTIDs here
@@ -84,7 +86,7 @@ do
 CTID=$i
 
 # Check if the VE exists
-if grep -w "$CTID" <<< `vzlist -a -Hoctid` &> /dev/null; then
+if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
 	echo "Backing up CTID: $CTID"
 
 	ID=$(uuidgen)
@@ -92,13 +94,13 @@ if grep -w "$CTID" <<< `vzlist -a -Hoctid` &> /dev/null; then
 	echo $ID > $VE_PRIVATE/vzpbackup_snapshot
 
 	# Take CT snapshot with parameters
-	vzctl snapshot $CTID --id $ID $CMDLINE
+	$VZCTL_CMD snapshot $CTID --id $ID $CMDLINE
 
 	# Copy the backup somewhere safe
 	# We copy the whole directory which then also includes
 	# a possible the dump (while being suspended) and container config
 	cd $VE_PRIVATE
-	HNAME=`vzlist -Hohostname $CTID`
+	HNAME=`$VZLIST_CMD -Hohostname $CTID`
 
 	tar cvf $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar .
 
@@ -121,7 +123,7 @@ if grep -w "$CTID" <<< `vzlist -a -Hoctid` &> /dev/null; then
 	fi
 
 	# Delete (merge) the snapshot
-	vzctl snapshot-delete $CTID --id $ID
+	$VZCTL_CMD snapshot-delete $CTID --id $ID
 else
 	echo "WARNING: No CT found for ID $CTID. Skipping..."
 fi
