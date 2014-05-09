@@ -33,8 +33,29 @@ COMPRESS=no
 TIMESTAMP=`date '+%Y%m%d%H%M%S'`
 VZLIST_CMD=/usr/sbin/vzlist
 VZCTL_CMD=/usr/sbin/vzctl
+EXCLUDE=""
 
 ## VARIABLES END
+
+## FUNCTIONS
+
+contains() {
+    string="$1"
+    substring="$2"
+
+    case "$string" in
+        *"$substring"*)
+            return 1
+        ;;
+        *)
+            return 0
+        ;;
+    esac
+
+    return 0
+}
+
+## FUNCTIONS END
 
 for i in "$@"
 do
@@ -49,6 +70,9 @@ case $i in
     ;;
     --suspend=*)
     	SUSPEND=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    ;;
+    --exclude=*)
+    	EXCLUDE="$EXCLUDE `echo $i | sed 's/[-a-zA-Z0-9]*=//'`"
     ;;
     --backup-dir=*)
     	BACKUP_DIR=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
@@ -70,6 +94,7 @@ echo SUSPEND: $SUSPEND
 echo BACKUP_DIR: $BACKUP_DIR
 echo COMPRESS: $COMPRESS
 echo CTIDs to backup: $CTIDS
+echo EXCLUDE the following CTIDs: $EXCLUDE
 
 if [ "x$SUSPEND" != "xyes" ]; then
     CMDLINE="${CMDLINE} --skip-suspend"
@@ -84,6 +109,14 @@ for i in $CTIDS
 do
 
 CTID=$i
+
+contains "$EXCLUDE" $CTID
+CONTAINS=$?
+
+if [ $CONTAINS -eq 1 ]; then
+    echo "Excluding CTID $CTID .."
+    continue;
+fi
 
 # Check if the VE exists
 if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
@@ -109,17 +142,22 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
                 echo -n "Compressing the backup archive "
 		if [ "$COMPRESS" == "bz" ]; then
 			echo "with bzip2"
-			bzip2 --compress $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
+                        CMD="bzip2"
 		elif [ "$COMPRESS" == "pz" ]; then
 			echo "with pigz"
-			pigz $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
+                        CMD="pigz"
 		elif [ "$COMPRESS" == "gz" ]; then
 			echo "with gzip"
-			gzip $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
+                        CMD="gzip"
 		elif [ "$COMPRESS" == "xz" ]; then
 			echo "with xz"
-			xz --compress $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
+                        CMD="xz --compress"
 		fi
+                if [ -r $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar ]; then
+                    $CMD $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
+                else
+                    echo "$BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar not found!"
+                fi
 	fi
 
 	# Delete (merge) the snapshot
@@ -129,3 +167,4 @@ else
 fi
 
 done
+
