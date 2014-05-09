@@ -42,6 +42,11 @@ Options:
 	"vzlist -Hoctid"). Currently there is no option to
 	exclude specific CTIDs from the backup.
 
+--exclude=\<CTID>
+
+    Exclude specified CTID from being backed up. Most useful
+    while using --all
+
 ## RESTORE: vzprestore.sh
 
 Restore a backup to a new container 250:
