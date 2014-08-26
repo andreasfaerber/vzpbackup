@@ -11,4 +11,5 @@ TODOs / Feature requests for vzpbackup
 - Hook-Script to run prior creating the snapshot (automysqlbackup, etc)
 - Allow "vzctl compact" prior backup to reduce space used (good idea!?)
 - Incremental backups (need to think if there is a smart way for this)
+- Add support for duply
 - and more

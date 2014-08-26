@@ -23,7 +23,7 @@
 ##
 
 SUSPEND=no
-BACKUP_DIR=/store/vzpbackup/
+BACKUP_DIR=/store/vzpbackup
 COMPRESS=no
 
 ##
@@ -160,22 +160,32 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
 		if [ "$COMPRESS" == "bz" ]; then
 			echo "with bzip2"
                         CMD="bzip2"
+                        COMPRESS_SUFFIX="bz2"
 		elif [ "$COMPRESS" == "pz" ]; then
 			echo "with pigz"
                         CMD="pigz"
+                        COMPRESS_SUFFIX="gz"
 		elif [ "$COMPRESS" == "gz" ]; then
 			echo "with gzip"
                         CMD="gzip"
+                        COMPRESS_SUFFIX="gz"
 		elif [ "$COMPRESS" == "xz" ]; then
 			echo "with xz"
                         CMD="xz --compress"
+                        COMPRESS_SUFFIX="xz"
 		fi
                 if [ -r $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar ]; then
                     $CMD $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
+                    BACKUP_FILE="$BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.$COMPRESS_SUFFIX"
                 else
                     echo "$BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar not found!"
                 fi
+        else
+            BACKUP_FILE="$BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar"
 	fi
+
+        echo "BACKUP FILE: $BACKUP_FILE"
+        ls -la $BACKUP_FILE
 
 	# Delete (merge) the snapshot
 	$VZCTL_CMD snapshot-delete $CTID --id $ID
