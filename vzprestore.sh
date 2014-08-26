@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # vzprestore.sh
 #
@@ -184,7 +184,14 @@ mv $SRC_VE_CONF /etc/vz/conf/$CTID.conf.new
 egrep -v '^(VE_ROOT|VE_PRIVATE)' /etc/vz/conf/$CTID.conf.new > /etc/vz/conf/$CTID.conf
 echo "VE_ROOT=$VE_ROOT" >> /etc/vz/conf/$CTID.conf
 echo "VE_PRIVATE=$VE_PRIVATE" >> /etc/vz/conf/$CTID.conf
-rm $SRC_VE_CONF /etc/vz/conf/$CTID.conf.new
+rm /etc/vz/conf/$CTID.conf.new
+
+for f in $(ls -1 dump/{$BACKUP_ID}.ve.*)
+do
+    echo $f
+    CONF_EXT=${f##*.}
+    echo mv $f /etc/vz/conf/$CTID.$CONF_EXT
+done
 
 # Look for possible dump
 DUMPFILE=${SRC_VE_CONF%.*.*}

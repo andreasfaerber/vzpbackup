@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # vzpbackup.sh
 #
@@ -129,6 +129,16 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
 	# Take CT snapshot with parameters
 	$VZCTL_CMD snapshot $CTID --id $ID $CMDLINE
 
+	# Backup configuration additional configuration files (/etc/vz/conf/$CTID.*)
+
+        echo "Copying config files: "
+        for f in $(ls -1 /etc/vz/conf/$CTID.*)
+        do
+            CONF_EXT=${f##*.}
+            cp $f "$VE_PRIVATE/dump/{$ID}.ve.$CONF_EXT"
+            echo $f
+        done
+
 	# Copy the backup somewhere safe
 	# We copy the whole directory which then also includes
 	# a possible the dump (while being suspended) and container config
@@ -136,6 +146,13 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
 	HNAME=`$VZLIST_CMD -Hohostname $CTID`
 
 	tar cvf $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar .
+
+        echo "Removing backup config files: "
+        for f in $(ls -1 $VE_PRIVATE/dump/{$ID}.ve.*)
+        do
+            ls -la "$f"
+            rm "$f"
+        done
 
 	# Compress the archive if wished
 	if [ "$COMPRESS" != "no" ]; then

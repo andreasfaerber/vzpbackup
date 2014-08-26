@@ -1,8 +1,14 @@
-TODOs for vzplbackup
+Bugs / Fixes
+
+- Allow --backup-dir=. (From where you called vzpbackup)
+
+TODOs / Feature requests for vzpbackup
 
 - More error handling and precaution
 -- Detect if a container is actually using ploop as storage device
+-- Error handling from commands being executed
+-- Check if a container was able to create a snapshot / checkpoint
 - Hook-Script to run prior creating the snapshot (automysqlbackup, etc)
-- Allow exclusion of containers while running with --all switch
 - Allow "vzctl compact" prior backup to reduce space used (good idea!?)
+- Incremental backups (need to think if there is a smart way for this)
 - and more

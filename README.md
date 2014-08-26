@@ -80,5 +80,9 @@ Options:
         VE_ROOT and VE_PRIVATE in the directory given by the vzdir
         option
 
+Requirements:
+
+- OpenVZ virtual machines using ploop as storage
+- uuidgen to create IDs for backups
 
 Author: Andreas Faerber, af@maeh.org
