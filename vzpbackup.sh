@@ -24,6 +24,7 @@
 
 SUSPEND=no
 BACKUP_DIR=/store/vzpbackup
+WORK_DIR=/store/vzpbackup
 COMPRESS=no
 
 ##
@@ -61,10 +62,11 @@ for i in "$@"
 do
 case $i in
     --help)
-		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--compress=<no/pz/bz/gz/xz>] [--all] <CTID> <CTID>"
+		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--work-dir=<Temp-Directory>] [--compress=<no/pz/bz/gz/xz>] [--all] <CTID> <CTID>"
 		echo "Defaults:"
 		echo -e "SUSPEND:\t\t$SUSPEND"
 		echo -e "BACKUP_DIR:\t\t$BACKUP_DIR"
+    		echo -e "WORK_DIR:\t\t$WORK_DIR"
 		echo -e "COMPRESS:\t\t$COMPRESS"
 		exit 0;
     ;;
@@ -76,6 +78,10 @@ case $i in
     ;;
     --backup-dir=*)
     	BACKUP_DIR=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+      	WORK_DIR=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    ;;
+    --work-dir=*)
+      	WORK_DIR=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     --compress=*)
 		COMPRESS=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
@@ -92,6 +98,7 @@ done
 
 echo SUSPEND: $SUSPEND
 echo BACKUP_DIR: $BACKUP_DIR
+echo WORK_DIR: $WORK_DIR
 echo COMPRESS: $COMPRESS
 echo CTIDs to backup: $CTIDS
 echo EXCLUDE the following CTIDs: $EXCLUDE
@@ -145,7 +152,7 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
 	cd $VE_PRIVATE
 	HNAME=`$VZLIST_CMD -Hohostname $CTID`
 
-	tar cvf $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar .
+	tar cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar .
 
         echo "Removing backup config files: "
         for f in $(ls -1 $VE_PRIVATE/dump/{$ID}.ve.*)
@@ -157,6 +164,7 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
 	# Compress the archive if wished
 	if [ "$COMPRESS" != "no" ]; then
                 echo -n "Compressing the backup archive "
+                COMPRESS_SUFFIX=""
 		if [ "$COMPRESS" == "bz" ]; then
 			echo "with bzip2"
                         CMD="bzip2"
@@ -174,15 +182,30 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
                         CMD="xz --compress"
                         COMPRESS_SUFFIX="xz"
 		fi
-                if [ -r $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar ]; then
-                    $CMD $BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
-                    BACKUP_FILE="$BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.$COMPRESS_SUFFIX"
+                if [ -r $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar ]; then
+                    $CMD $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
+                    BACKUP_FILE="$WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.$COMPRESS_SUFFIX"
                 else
-                    echo "$BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar not found!"
+                    echo "$WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar not found!"
                 fi
         else
-            BACKUP_FILE="$BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar"
+            BACKUP_FILE="$WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar"
 	fi
+  
+  # Move file from temp directory to backup directory
+  
+  if [ "$BACKUP_DIR" != "$WORK_DIR" ]; then
+    echo "Moving backup file"
+  
+    if [ "$COMPRESS_SUFFIX" != "" ]; then
+      FINAL_FILE="$BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.$COMPRESS_SUFFIX"
+    else
+      FINAL_FILE="$BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar"
+    fi
+    
+    mv $BACKUP_FILE $FINAL_FILE
+    BACKUP_FILE="$FINAL_FILE"
+  fi
 
         echo "BACKUP FILE: $BACKUP_FILE"
         ls -la $BACKUP_FILE
@@ -194,4 +217,3 @@ else
 fi
 
 done
-
