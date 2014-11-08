@@ -26,6 +26,7 @@ SUSPEND=no
 BACKUP_DIR=/store/vzpbackup
 WORK_DIR=/store/vzpbackup
 COMPRESS=no
+TTL=0
 
 ##
 ## VARIABLES
@@ -62,12 +63,13 @@ for i in "$@"
 do
 case $i in
     --help)
-		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--work-dir=<Temp-Directory>] [--compress=<no/pz/bz/gz/xz>] [--all] <CTID> <CTID>"
+		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--work-dir=<Temp-Directory>] [--compress=<no/pz/bz/gz/xz>] [--ttl=<Days to live>] [--all] <CTID> <CTID>"
 		echo "Defaults:"
 		echo -e "SUSPEND:\t\t$SUSPEND"
 		echo -e "BACKUP_DIR:\t\t$BACKUP_DIR"
     		echo -e "WORK_DIR:\t\t$WORK_DIR"
 		echo -e "COMPRESS:\t\t$COMPRESS"
+    		echo -e "TTL:\t\t$TTL"
 		exit 0;
     ;;
     --suspend=*)
@@ -86,6 +88,9 @@ case $i in
     --compress=*)
 		COMPRESS=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
 	;;
+    --ttl=*)
+    	TTL=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    ;;
     --all)
     	CTIDS=`$VZLIST_CMD -a -Hoctid`
     ;;
@@ -100,6 +105,7 @@ echo SUSPEND: $SUSPEND
 echo BACKUP_DIR: $BACKUP_DIR
 echo WORK_DIR: $WORK_DIR
 echo COMPRESS: $COMPRESS
+echo BACKUP TTL: $TTL
 echo CTIDs to backup: $CTIDS
 echo EXCLUDE the following CTIDs: $EXCLUDE
 
@@ -206,6 +212,14 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
     mv $BACKUP_FILE $FINAL_FILE
     BACKUP_FILE="$FINAL_FILE"
   fi
+  
+  # Delete old backups
+  
+  if [ "$TTL" -gt 0 ]; then
+    echo "Deleting old backup files..."
+    find $BACKUP_DIR/* -mtime +${TTL} -exec rm {} \;
+  fi
+  
 
         echo "BACKUP FILE: $BACKUP_FILE"
         ls -la $BACKUP_FILE
