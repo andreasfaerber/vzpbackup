@@ -1,7 +1,7 @@
 2014-11-13 Andreas Faerber <af@maeh.org>
 
         * Merged pull request from renoguyon (Thank you!):
-        New options : work-directory and time to live
+          New options : work-directory and time to live
 
 2014-08-26 Andreas Faerber <af@maeh.org>
 
