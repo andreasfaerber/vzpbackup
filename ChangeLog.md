@@ -1,3 +1,8 @@
+2014-11-13 Andreas Faerber <af@maeh.org>
+
+        * Merged pull request from renoguyon (Thank you!):
+        New options : work-directory and time to live
+
 2014-08-26 Andreas Faerber <af@maeh.org>
 
 	* Output "BACKUP FILE: <Path to Backup created>" to allow further
