@@ -1,3 +1,7 @@
+2015-06-22 Andreas Faerber <af@maeh.org>
+
+	* Added option(s) to compress the archive through tar (tgz, tbz, txz)
+
 2014-11-13 Andreas Faerber <af@maeh.org>
 
         * Merged pull request from renoguyon (Thank you!):
