@@ -2,6 +2,9 @@
 
 	* Added option "--compact" to compact a container before it is backed
           up
+	* Redirect possible error message to /dev/null in vzprestore.sh in case
+	  there is no additional configuration in the dump directory. This is
+	  not an error for the restore process.
 
 2015-06-22 Andreas Faerber <af@maeh.org>
 
