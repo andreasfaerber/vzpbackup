@@ -186,7 +186,7 @@ echo "VE_ROOT=$VE_ROOT" >> /etc/vz/conf/$CTID.conf
 echo "VE_PRIVATE=$VE_PRIVATE" >> /etc/vz/conf/$CTID.conf
 rm /etc/vz/conf/$CTID.conf.new
 
-for f in $(ls -1 dump/{$BACKUP_ID}.ve.*)
+for f in $(ls -1 dump/{$BACKUP_ID}.ve.* 2>/dev/null)
 do
     echo $f
     CONF_EXT=${f##*.}
