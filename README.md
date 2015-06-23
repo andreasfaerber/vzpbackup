@@ -28,12 +28,35 @@ Options:
 --backup-dir=\<Directory> (Default: /store/vzpbackup)
 
 	Parameter to change the default backup directory. Either
-	use the parameter or change the script.
+	use the parameter or change the script. The temporary
+	files created (The backup tar file for example) will be 
+        created in this directory.
+
+--work-dir=\<Directory> (Default: /store/vzpbackup)
+
+	Parameter to change the default working directory. Either
+        use the parameter or change the script.
+
+--compact
+
+	Runs vzctl compact for each container before initiating
+	the backup
 
 --compress=\<Compression> (Default: no(ne))
 
-    Allows you to compress the resulting archive file using either
-    bzip2, pigz, gzip or xz to save some disk space.
+	Allows you to compress the resulting archive file using either
+	bzip2, pigz, gzip or xz to save some disk space.
+
+	Possible options:
+
+        --compress=no  - No compression of backup archives
+	--compress=pz  - Compress with pigz (needs to be installed)
+	--compress=bz  - Compress with bzip2 (needs to be installed)
+	--compress=tbz - Compress through tar command with bzip2
+	--compress=gz  - Compress via gzip (needs to be installed)
+	--compress=tgz - Compress through tar command with gzip
+	--compress=xz  - Compress via xz (needs to be installed)
+	--compress=txz - Compress through tar command with xz
 
 --all
 
