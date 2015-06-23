@@ -9,7 +9,6 @@ TODOs / Feature requests for vzpbackup
 -- Error handling from commands being executed
 -- Check if a container was able to create a snapshot / checkpoint
 - Hook-Script to run prior creating the snapshot (automysqlbackup, etc)
-- Allow "vzctl compact" prior backup to reduce space used (good idea!?)
 - Incremental backups (need to think if there is a smart way for this)
 - Add support for duply
 - and more

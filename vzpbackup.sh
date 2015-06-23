@@ -26,6 +26,7 @@ SUSPEND=no
 BACKUP_DIR=/store/vzpbackup
 WORK_DIR=/store/vzpbackup
 COMPRESS=no
+COMPACT=0
 TTL=0
 
 ##
@@ -63,13 +64,14 @@ for i in "$@"
 do
 case $i in
     --help)
-		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--work-dir=<Temp-Directory>] [--compress=<no/pz/bz/tbz/gz/tgz/xz/txz>] [--ttl=<Days to live>] [--all] <CTID> <CTID>"
+		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--work-dir=<Temp-Directory>] [--compress=<no/pz/bz/tbz/gz/tgz/xz/txz>] [--ttl=<Days to live>] [--compact] [--all] <CTID> <CTID>"
 		echo "Defaults:"
 		echo -e "SUSPEND:\t\t$SUSPEND"
 		echo -e "BACKUP_DIR:\t\t$BACKUP_DIR"
     		echo -e "WORK_DIR:\t\t$WORK_DIR"
 		echo -e "COMPRESS:\t\t$COMPRESS"
-    		echo -e "TTL:\t\t$TTL"
+    		echo -e "TTL:\t\t\t$TTL"
+    		echo -e "COMPACT:\t\t$COMPACT"
 		exit 0;
     ;;
     --suspend=*)
@@ -91,6 +93,9 @@ case $i in
     --ttl=*)
     	TTL=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
+    --compact)
+        COMPACT=1
+    ;;
     --all)
     	CTIDS=`$VZLIST_CMD -a -Hoctid`
     ;;
@@ -101,13 +106,14 @@ case $i in
 esac
 done
 
-echo SUSPEND: $SUSPEND
-echo BACKUP_DIR: $BACKUP_DIR
-echo WORK_DIR: $WORK_DIR
-echo COMPRESS: $COMPRESS
-echo BACKUP TTL: $TTL
-echo CTIDs to backup: $CTIDS
-echo EXCLUDE the following CTIDs: $EXCLUDE
+echo -e "SUSPEND: \t\t$SUSPEND"
+echo -e "BACKUP_DIR: \t\t$BACKUP_DIR"
+echo -e "WORK_DIR: \t\t$WORK_DIR"
+echo -e "COMPRESS: \t\t$COMPRESS"
+echo -e "COMPACT: \t\t$COMPACT"
+echo -e "BACKUP TTL: \t\t$TTL"
+echo -e "CTIDs to backup: \t\t$CTIDS"
+echo -e "EXCLUDE CTIDs: \t\t$EXCLUDE"
 
 if [ "x$SUSPEND" != "xyes" ]; then
     CMDLINE="${CMDLINE} --skip-suspend"
@@ -133,6 +139,12 @@ fi
 
 # Check if the VE exists
 if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
+        if [ $COMPACT == 1 ]; then
+            echo "Compacting CTID: $CTID"
+            $VZCTL_CMD compact $CTID > /tmp/vzpbackup_compact_$CTID_$TIMESTAMP.log
+            echo "Compact log file: /tmp/vzpbackup_compact_$CTID_$TIMESTAMP.log"
+        fi
+
 	echo "Backing up CTID: $CTID"
 
 	ID=$(uuidgen)
