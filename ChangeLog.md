@@ -1,3 +1,8 @@
+2015-06-23 Andreas Faerber <af@maeh.org>
+
+	* Added option "--compact" to compact a container before it is backed
+          up
+
 2015-06-22 Andreas Faerber <af@maeh.org>
 
 	* Added option(s) to compress the archive through tar (tgz, tbz, txz)
