@@ -49,7 +49,7 @@ Options:
 
 	Possible options:
 
-        --compress=no  - No compression of backup archives
+	--compress=no  - No compression of backup archives
 	--compress=pz  - Compress with pigz (needs to be installed)
 	--compress=bz  - Compress with bzip2 (needs to be installed)
 	--compress=tbz - Compress through tar command with bzip2
