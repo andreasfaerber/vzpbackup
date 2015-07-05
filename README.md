@@ -45,7 +45,7 @@ Options:
 --compress=\<Compression> (Default: no(ne))
 
 	Allows you to compress the resulting archive file using either
-	bzip2, pigz, gzip or xz to save some disk space.
+	bzip2, pigz, pbzip2, gzip or xz to save some disk space.
 
 	Possible options:
 
@@ -57,6 +57,7 @@ Options:
 	--compress=tgz - Compress through tar command with gzip
 	--compress=xz  - Compress via xz (needs to be installed)
 	--compress=txz - Compress through tar command with xz
+	--compress=pbz - Compress with pbzip2 (needs to be installed)
 
 --all
 
