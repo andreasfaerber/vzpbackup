@@ -179,7 +179,7 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
         elif [ "$COMPRESS" == "txz" ]; then
             tar Jcvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.xz .
             COMPRESS_SUFFIX=xz
-        if [ "$COMPRESS" == "pz" ]; then
+        elif [ "$COMPRESS" == "pz" ]; then
 	    tar --use-compress-program=pigz cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.gz .
             COMPRESS_SUFFIX=gz
         elif [ "$COMPRESS" == "pbz" ]; then
