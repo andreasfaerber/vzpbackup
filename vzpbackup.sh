@@ -171,22 +171,22 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
 	HNAME=`$VZLIST_CMD -Hohostname $CTID`
 
         if [ "$COMPRESS" == "tgz" ]; then
-	    tar zcvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.gz .
+	    tar -zcvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.gz .
             COMPRESS_SUFFIX=gz
         elif [ "$COMPRESS" == "tbz" ]; then
-            tar jcvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.bz2 .
+            tar -jcvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.bz2 .
             COMPRESS_SUFFIX=bz2
         elif [ "$COMPRESS" == "txz" ]; then
-            tar Jcvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.xz .
+            tar -Jcvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.xz .
             COMPRESS_SUFFIX=xz
         elif [ "$COMPRESS" == "pz" ]; then
-	    tar --use-compress-program=pigz cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.gz .
+	    tar --use-compress-program=pigz -cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.gz .
             COMPRESS_SUFFIX=gz
         elif [ "$COMPRESS" == "pbz" ]; then
-            tar --use-compress-program=pbzip2 cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.bz2 .
+            tar --use-compress-program=pbzip2 -cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.bz2 .
             COMPRESS_SUFFIX=bz2
         else
-            tar cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar .
+            tar -cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar .
         fi
 
         echo "Removing backup config files: "
