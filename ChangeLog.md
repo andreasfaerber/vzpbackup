@@ -1,3 +1,9 @@
+2015-11-18 Andreas Faerber <af@maeh.org>
+
+	* Added notice about the --ttl option to be removed beginning of
+	  December as it's implementation is currently unsafe
+	* Removed --ttl option from usage
+
 2015-06-23 Andreas Faerber <af@maeh.org>
 
 	* Added option "--compact" to compact a container before it is backed

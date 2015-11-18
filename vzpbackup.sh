@@ -64,7 +64,7 @@ for i in "$@"
 do
 case $i in
     --help)
-		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--work-dir=<Temp-Directory>] [--compress=<no/pz/bz/pbz/tbz/gz/tgz/xz/txz>] [--ttl=<Days to live>] [--compact] [--all] <CTID> <CTID>"
+		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--work-dir=<Temp-Directory>] [--compress=<no/pz/bz/pbz/tbz/gz/tgz/xz/txz>] [--compact] [--all] <CTID> <CTID>"
 		echo "Defaults:"
 		echo -e "SUSPEND:\t\t$SUSPEND"
 		echo -e "BACKUP_DIR:\t\t$BACKUP_DIR"
@@ -105,6 +105,17 @@ case $i in
     ;;
 esac
 done
+
+if [ "$TTL" -gt 0 ]; then
+  echo
+  echo "############################################################################"
+  echo "### NOTICE: The --ttl option will be removed in the next release as it's ###"
+  echo "### NOTICE: current implementation is rather unsafe. I will provide a    ###"
+  echo "### NOTICE: script to be run via cron to remove old backups safely       ###"
+  echo "### NOTICE: This will happen around beginning of December 2015           ###"
+  echo "############################################################################"
+  echo
+fi
 
 echo -e "SUSPEND: \t\t$SUSPEND"
 echo -e "BACKUP_DIR: \t\t$BACKUP_DIR"
