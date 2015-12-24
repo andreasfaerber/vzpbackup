@@ -28,6 +28,7 @@ WORK_DIR=/store/vzpbackup
 COMPRESS=no
 COMPACT=0
 TTL=0
+IOLIMIT=
 
 ##
 ## VARIABLES
@@ -64,7 +65,7 @@ for i in "$@"
 do
 case $i in
     --help)
-		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--work-dir=<Temp-Directory>] [--compress=<no/pz/bz/pbz/tbz/gz/tgz/xz/txz>] [--compact] [--all] <CTID> <CTID>"
+		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--work-dir=<Temp-Directory>] [--compress=<no/pz/bz/pbz/tbz/gz/tgz/xz/txz>] [--ttl=<Days to live>] [--compact] [--all] <CTID> <CTID>"
 		echo "Defaults:"
 		echo -e "SUSPEND:\t\t$SUSPEND"
 		echo -e "BACKUP_DIR:\t\t$BACKUP_DIR"
@@ -72,6 +73,7 @@ case $i in
 		echo -e "COMPRESS:\t\t$COMPRESS"
     		echo -e "TTL:\t\t\t$TTL"
     		echo -e "COMPACT:\t\t$COMPACT"
+    		echo -e "IOLIMIT:\t\t$IOLIMIT"
 		exit 0;
     ;;
     --suspend=*)
@@ -96,32 +98,25 @@ case $i in
     --compact)
         COMPACT=1
     ;;
+    --iolimit=*)
+    	IOLIMIT=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    ;;
     --all)
     	CTIDS=`$VZLIST_CMD -a -Hoctid`
     ;;
     *)
-		# Parse CTIDs here
-		CTIDS=$CTIDS" "$i
+	# Parse CTIDs here
+        CTIDS=$CTIDS" "$i
     ;;
 esac
 done
-
-if [ "$TTL" -gt 0 ]; then
-  echo
-  echo "############################################################################"
-  echo "### NOTICE: The --ttl option will be removed in the next release as it's ###"
-  echo "### NOTICE: current implementation is rather unsafe. I will provide a    ###"
-  echo "### NOTICE: script to be run via cron to remove old backups safely       ###"
-  echo "### NOTICE: This will happen around beginning of December 2015           ###"
-  echo "############################################################################"
-  echo
-fi
 
 echo -e "SUSPEND: \t\t$SUSPEND"
 echo -e "BACKUP_DIR: \t\t$BACKUP_DIR"
 echo -e "WORK_DIR: \t\t$WORK_DIR"
 echo -e "COMPRESS: \t\t$COMPRESS"
 echo -e "COMPACT: \t\t$COMPACT"
+echo -e "IOLIMIT: \t\t$IOLIMIT"
 echo -e "BACKUP TTL: \t\t$TTL"
 echo -e "CTIDs to backup: \t\t$CTIDS"
 echo -e "EXCLUDE CTIDs: \t\t$EXCLUDE"
@@ -181,23 +176,48 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
 	cd $VE_PRIVATE
 	HNAME=`$VZLIST_CMD -Hohostname $CTID`
 
+        TAR_CMD=
+        ARCHIVE_FILENAME=
+
         if [ "$COMPRESS" == "tgz" ]; then
-	    tar -zcvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.gz .
+            TAR_CMD="tar -zcvf"
+            ARCHIVE_FILENAME=$WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.gz
+            BACKUP_PATH="."
             COMPRESS_SUFFIX=gz
         elif [ "$COMPRESS" == "tbz" ]; then
-            tar -jcvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.bz2 .
+            TAR_CMD="tar -jcvf"
+            ARCHIVE_FILENAME="$WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.bz2"
+            BACKUP_PATH="."
             COMPRESS_SUFFIX=bz2
         elif [ "$COMPRESS" == "txz" ]; then
-            tar -Jcvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.xz .
+            TAR_CMD="tar -Jcvf"
+            ARCHIVE_FILENAME="$WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.xz"
+            BACKUP_PATH="."
             COMPRESS_SUFFIX=xz
         elif [ "$COMPRESS" == "pz" ]; then
-	    tar --use-compress-program=pigz -cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.gz .
+	    TAR_CMD="tar --use-compress-program=pigz -cvf"
+            ARCHIVE_FILENAME="$WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.gz"
+            BACKUP_PATH="."
             COMPRESS_SUFFIX=gz
         elif [ "$COMPRESS" == "pbz" ]; then
-            tar --use-compress-program=pbzip2 -cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.bz2 .
+            TAR_CMD="tar --use-compress-program=pbzip2 -cvf"
+            ARCHIVE_FILENAME="$WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.bz2"
+            BACKUP_PATH="."
             COMPRESS_SUFFIX=bz2
         else
-            tar -cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar .
+            TAR_CMD="tar -cvf"
+            ARCHIVE_FILENAME="$WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar"
+            BACKUP_PATH="."
+            COMPRESS_SUFFIX=
+        fi
+
+        # Execute tar
+        if [ -z "$IOLIMIT" ]; then
+            echo "No IO limiting.."
+            $TAR_CMD $ARCHIVE_FILENAME $BACKUP_PATH
+        else
+            echo "IO limit of $IOLIMIT active"
+            $TAR_CMD - $BACKUP_PATH | pv -L $IOLIMIT > $ARCHIVE_FILENAME
         fi
 
         echo "Removing backup config files: "

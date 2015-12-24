@@ -1,3 +1,7 @@
+2015-12-24 Andreas Faerber <af@maeh.org>
+
+	* Added the option --iolimit to limit the IO consumed by tar
+
 2015-11-18 Andreas Faerber <af@maeh.org>
 
 	* Added notice about the --ttl option to be removed beginning of
