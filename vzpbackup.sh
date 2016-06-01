@@ -33,10 +33,14 @@ TTL=0
 ## VARIABLES
 ##
 
-TIMESTAMP=`date '+%Y%m%d%H%M%S'`
+TIMESTAMP=`date '+%Y%m%d-%H%M%S'`
 VZLIST_CMD=/usr/sbin/vzlist
 VZCTL_CMD=/usr/sbin/vzctl
 EXCLUDE=""
+PREFIX="vzpbackup_"
+
+## Add NODE hostname
+PREFIX="$PREFIX`hostname -s`_"
 
 ## VARIABLES END
 
@@ -180,24 +184,36 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
 	# a possible the dump (while being suspended) and container config
 	cd $VE_PRIVATE
 	HNAME=`$VZLIST_CMD -Hohostname $CTID`
+	FILENAME="${PREFIX}${CTID}_${HNAME}_${TIMESTAMP}"
 
+	COMPRESS_SUFFIX=""
         if [ "$COMPRESS" == "tgz" ]; then
-	    tar -zcvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.gz .
-            COMPRESS_SUFFIX=gz
+		tar -zcvf $WORK_DIR/$FILENAME.tar.gz .
+		COMPRESS_SUFFIX="gz"
         elif [ "$COMPRESS" == "tbz" ]; then
-            tar -jcvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.bz2 .
-            COMPRESS_SUFFIX=bz2
+		tar -jcvf $WORK_DIR/$FILENAME.tar.bz2 .
+		COMPRESS_SUFFIX="bz2"
         elif [ "$COMPRESS" == "txz" ]; then
-            tar -Jcvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.xz .
-            COMPRESS_SUFFIX=xz
+		tar -Jcvf $WORK_DIR/$FILENAME.tar.xz .
+		COMPRESS_SUFFIX="xz"
         elif [ "$COMPRESS" == "pz" ]; then
-	    tar --use-compress-program=pigz -cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.gz .
-            COMPRESS_SUFFIX=gz
+		tar --use-compress-program=pigz -cvf $WORK_DIR/$FILENAME.tar.gz .
+		COMPRESS_SUFFIX="gz"
         elif [ "$COMPRESS" == "pbz" ]; then
-            tar --use-compress-program=pbzip2 -cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.bz2 .
-            COMPRESS_SUFFIX=bz2
+		tar --use-compress-program=pbzip2 -cvf $WORK_DIR/$FILENAME.tar.bz2 .
+		COMPRESS_SUFFIX="bz2"
         else
-            tar -cvf $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar .
+		tar -cvf $WORK_DIR/$FILENAME.tar .
+		if [ "$COMPRESS" == "bz" ]; then
+                        bzip2 $WORK_DIR/$FILENAME.tar
+                        COMPRESS_SUFFIX="bz2"
+		elif [ "$COMPRESS" == "gz" ]; then
+                        gzip $WORK_DIR/$FILENAME.tar
+                        COMPRESS_SUFFIX="gz"
+		elif [ "$COMPRESS" == "xz" ]; then
+                        xz --compress $WORK_DIR/$FILENAME.tar
+                        COMPRESS_SUFFIX="xz"
+		fi
         fi
 
         echo "Removing backup config files: "
@@ -207,62 +223,26 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
             rm "$f"
         done
 
-	# Compress the archive if wished
-	if [ "$COMPRESS" != "no" ]; then
-                if [ $COMPRESS == "tgz" -o $COMPRESS="tbz" -o $COMPRESS="txz" ]; then
-                    echo -n "Compressing the backup archive "
-                    COMPRESS_SUFFIX=""
-		fi
-		if [ "$COMPRESS" == "bz" ]; then
-			echo "with bzip2"
-                        CMD="bzip2"
-                        COMPRESS_SUFFIX="bz2"
-		elif [ "$COMPRESS" == "gz" ]; then
-			echo "with gzip"
-                        CMD="gzip"
-                        COMPRESS_SUFFIX="gz"
-		elif [ "$COMPRESS" == "xz" ]; then
-			echo "with xz"
-                        CMD="xz --compress"
-                        COMPRESS_SUFFIX="xz"
-		fi
-                if [ -r $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar ]; then
-                    $CMD $WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar
-                    BACKUP_FILE="$WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.$COMPRESS_SUFFIX"
-                else
-                    if [ $COMPRESS == "tgz" -o $COMPRESS="tbz" -o $COMPRESS="txz" ]; then
-                        echo "$WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar not found!"
-                    fi
-                fi
-        else
-            BACKUP_FILE="$WORK_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar"
+	if [ "$COMPRESS_SUFFIX" == "" ]; then
+		BACKUP_FILE="$FILENAME.tar"
+	else
+		BACKUP_FILE="$FILENAME.tar.$COMPRESS_SUFFIX"
 	fi
-  
-  # Move file from temp directory to backup directory
-  
-  if [ "$BACKUP_DIR" != "$WORK_DIR" ]; then
-    echo "Moving backup file"
-  
-    if [ "$COMPRESS_SUFFIX" != "" ]; then
-      FINAL_FILE="$BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar.$COMPRESS_SUFFIX"
-    else
-      FINAL_FILE="$BACKUP_DIR/vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}.tar"
-    fi
-    
-    mv $BACKUP_FILE $FINAL_FILE
-    BACKUP_FILE="$FINAL_FILE"
-  fi
-  
-  # Delete old backups
-  
-  if [ "$TTL" -gt 0 ]; then
-    echo "Deleting old backup files..."
-    find $BACKUP_DIR/* -mtime +${TTL} -exec rm {} \;
-  fi
-  
 
-        echo "BACKUP FILE: $BACKUP_FILE"
-        ls -la $BACKUP_FILE
+	# Move file from temp directory to backup directory
+	if [ "$BACKUP_DIR" != "$WORK_DIR" ]; then
+		echo "Moving backup file"
+		mv $WORK_DIR/$BACKUP_FILE $BACKUP_DIR/$BACKUP_FILE
+	fi
+
+	# Delete old backups
+	if [ "$TTL" -gt 0 ]; then
+		echo "Deleting old backup files..."
+		find $BACKUP_DIR/* -mtime +${TTL} -exec rm {} \;
+	fi
+
+        echo "BACKUP FILE: $BACKUP_DIR/$BACKUP_FILE"
+        ls -la $BACKUP_DIR/$BACKUP_FILE
 
 	# Delete (merge) the snapshot
 	$VZCTL_CMD snapshot-delete $CTID --id $ID
