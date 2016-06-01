@@ -33,14 +33,14 @@ TTL=0
 ## VARIABLES
 ##
 
-TIMESTAMP=`date '+%Y%m%d%H%M%S'`
+TIMESTAMP=`date '+%Y%m%d-%H%M%S'`
 VZLIST_CMD=/usr/sbin/vzlist
 VZCTL_CMD=/usr/sbin/vzctl
 EXCLUDE=""
 PREFIX="vzpbackup_"
 
 ## Add NODE hostname
-#PREFIX="$PREFIX`hostname -s`_"
+PREFIX="$PREFIX`hostname -s`_"
 
 ## VARIABLES END
 
