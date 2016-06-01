@@ -37,6 +37,10 @@ TIMESTAMP=`date '+%Y%m%d%H%M%S'`
 VZLIST_CMD=/usr/sbin/vzlist
 VZCTL_CMD=/usr/sbin/vzctl
 EXCLUDE=""
+PREFIX="vzpbackup_"
+
+## Add NODE hostname
+#PREFIX="$PREFIX`hostname -s`_"
 
 ## VARIABLES END
 
@@ -180,7 +184,7 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
 	# a possible the dump (while being suspended) and container config
 	cd $VE_PRIVATE
 	HNAME=`$VZLIST_CMD -Hohostname $CTID`
-	FILENAME="vzpbackup_${CTID}_${HNAME}_${TIMESTAMP}"
+	FILENAME="${PREFIX}${CTID}_${HNAME}_${TIMESTAMP}"
 
         if [ "$COMPRESS" == "tgz" ]; then
 	    tar -zcvf $WORK_DIR/$FILENAME.tar.gz .
