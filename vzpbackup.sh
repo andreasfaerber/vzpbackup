@@ -62,13 +62,23 @@ contains() {
     return 0
 }
 
+show_param() {
+	echo "---";
+	echo -e "SUSPEND: \t\t$SUSPEND"
+	echo -e "BACKUP_DIR: \t\t$BACKUP_DIR"
+	echo -e "WORK_DIR: \t\t$WORK_DIR"
+	echo -e "COMPRESS: \t\t$COMPRESS"
+	echo -e "COMPACT: \t\t$COMPACT"
+	echo -e "CTIDs to backup: \t\t$CTIDS"
+	echo -e "EXCLUDE CTIDs: \t\t$EXCLUDE"
+	echo "---";
+}
 ## FUNCTIONS END
 
 ## Get global and local config, if there exists
 if [ -f "/etc/vz/vzpbackup.conf" ]; then
 	source "/etc/vz/vzpbackup.conf";
 fi
-
 if [ -f "./vzpbackup.conf" ]; then
 	source "./vzpbackup.conf";
 fi
@@ -80,12 +90,7 @@ case $i in
     --help)
 		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--work-dir=<Temp-Directory>] [--compress=<no/pz/bz/pbz/tbz/gz/tgz/xz/txz>] [--compact] [--all] <CTID> <CTID>"
 		echo "Defaults:"
-		echo -e "SUSPEND:\t\t$SUSPEND"
-		echo -e "BACKUP_DIR:\t\t$BACKUP_DIR"
-    		echo -e "WORK_DIR:\t\t$WORK_DIR"
-		echo -e "COMPRESS:\t\t$COMPRESS"
-    		echo -e "TTL:\t\t\t$TTL"
-    		echo -e "COMPACT:\t\t$COMPACT"
+		show_param;
 		exit 0;
     ;;
     --suspend=*)
@@ -131,14 +136,8 @@ if [ "$TTL" -gt 0 ]; then
   echo
 fi
 
-echo -e "SUSPEND: \t\t$SUSPEND"
-echo -e "BACKUP_DIR: \t\t$BACKUP_DIR"
-echo -e "WORK_DIR: \t\t$WORK_DIR"
-echo -e "COMPRESS: \t\t$COMPRESS"
-echo -e "COMPACT: \t\t$COMPACT"
-echo -e "BACKUP TTL: \t\t$TTL"
-echo -e "CTIDs to backup: \t\t$CTIDS"
-echo -e "EXCLUDE CTIDs: \t\t$EXCLUDE"
+show_param;
+
 
 if [ "x$SUSPEND" != "xyes" ]; then
     CMDLINE="${CMDLINE} --skip-suspend"
