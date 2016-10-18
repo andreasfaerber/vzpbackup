@@ -11,6 +11,17 @@ OpenVZ wiki page regarding image backup:
 
 ## BACKUP: vzpbackup.sh
 
+```
+Usage: ./vzpbackup.sh
+[--suspend=<yes/no>]
+[--backup-dir=<Backup-Directory>]
+[--work-dir=<Temp-Directory>]
+[--compress=<no/pz/bz/pbz/tbz/gz/tgz/xz/txz>]
+[--compact]
+[--all]
+<CTID> <CTID>
+```
+
 Backup a container with container ID 200:
 
 vzpbackup.sh --suspend=yes --compress=gz 200
@@ -73,19 +84,20 @@ Options:
 
 ## RESTORE: vzprestore.sh
 
+```
+Usage: ./vzprestore.sh
+[--vzdir=<Directory to restore VE_PRIVATE and VE_ROOT to>]
+[--confirm=<yes/no>]
+[--delete-backup-snapshot=<yes/no>]
+<Filename>
+<CTID>
+```
+
 Restore a backup to a new container 250:
 
-vzprestore.sh --archive=/store/vzpbackup/vzpbackup_200_test.host.tar --container=250
+vzprestore.sh /store/vzpbackup/vzpbackup_200_test.host.tar 250
 
 Options:
-
---archive=\<PathToBackupArchive> (Default: None)
-
-	Specify the backup archive to be restored.
-
---container=\<ContainerID> (Default: None)
-
-	Specify the container that the backup shall be restored to.
 
 --confirm=\<yes/no>
 
