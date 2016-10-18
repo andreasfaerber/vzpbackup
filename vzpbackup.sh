@@ -27,7 +27,6 @@ BACKUP_DIR=/store/vzpbackup
 WORK_DIR=/store/vzpbackup
 COMPRESS=no
 COMPACT=0
-TTL=0
 
 ##
 ## VARIABLES
@@ -109,9 +108,6 @@ case $i in
     --compress=*)
 		COMPRESS=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
 	;;
-    --ttl=*)
-    	TTL=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
-    ;;
     --compact)
         COMPACT=1
     ;;
@@ -124,17 +120,6 @@ case $i in
     ;;
 esac
 done
-
-if [ "$TTL" -gt 0 ]; then
-  echo
-  echo "############################################################################"
-  echo "### NOTICE: The --ttl option will be removed in the next release as it's ###"
-  echo "### NOTICE: current implementation is rather unsafe. I will provide a    ###"
-  echo "### NOTICE: script to be run via cron to remove old backups safely       ###"
-  echo "### NOTICE: This will happen around beginning of December 2015           ###"
-  echo "############################################################################"
-  echo
-fi
 
 show_param;
 
@@ -242,12 +227,6 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
 	if [ "$BACKUP_DIR" != "$WORK_DIR" ]; then
 		echo "Moving backup file"
 		mv $WORK_DIR/$BACKUP_FILE $BACKUP_DIR/$BACKUP_FILE
-	fi
-
-	# Delete old backups
-	if [ "$TTL" -gt 0 ]; then
-		echo "Deleting old backup files..."
-		find $BACKUP_DIR/* -mtime +${TTL} -exec rm {} \;
 	fi
 
         echo "BACKUP FILE: $BACKUP_DIR/$BACKUP_FILE"
