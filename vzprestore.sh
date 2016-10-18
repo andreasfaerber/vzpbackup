@@ -58,6 +58,16 @@ show_param() {
 	echo "---";
 }
 
+## Get global and local config, if there exists
+if [ -f "/etc/vz/vzpbackup.conf" ]; then
+	source "/etc/vz/vzpbackup.conf";
+fi
+
+if [ -f "./vzpbackup.conf" ]; then
+	source "./vzpbackup.conf";
+fi
+
+
 for i in "$@"
 do
 case $i in
