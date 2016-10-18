@@ -31,20 +31,31 @@ VZDIR=
 ## VARIABLES END
 
 show_usage() {
-    echo "Usage: $0 --archive=<Filename> --container=<CTID to restore to> [--vzdir=<Directory to restore VE_PRIVATE and VE_ROOT to>] [--confirm=<yes/no>] [--delete-backup-snapshot=<yes/no>]"
+    echo "Usage: $0 [--vzdir=<Directory to restore VE_PRIVATE and VE_ROOT to>] [--confirm=<yes/no>] [--delete-backup-snapshot=<yes/no>] <Filename> <CTID>"
     echo "Defaults:"
-    echo -e "Archive:\t\t\tNONE"
-    echo -e "Container:\t\t\tNONE"
-    echo -e "Confirm:\t\t\tYes"
-    echo -e "Delete Backup Snapshot:\t\tNo" 
-    echo -e "VZ Directory (for VE_ROOT and VE_PRIVATE):\tGlobal Default"
+    show_param;
     echo
     echo "Note: Deleting the backup snapshot causes a switch to and a deletion"
     echo "      of the snapshot taken during backup. Doing so will cause any"
     echo "      running container to be rebooted. You will not be able to"
     echo "      resume the container from a suspended state."
     echo
-    echo "You need to give at least --archive and --container as arguments"
+    echo "You need to give at least <Filename> and <CTID> as arguments"
+}
+
+show_param() {
+	echo "---";
+	echo -e "Filename:\t\t\t$ARCHIVE"
+	echo -e "Restore to container:\t\t$CONTAINER"
+	if [ "x"$VE_PRIVATE == "x" ]; then
+		echo -e "Restoring VZ to:\t\tGlobal Default"
+	else
+		echo -e "Restoring VE_PRIVATE:\t\t$VE_PRIVATE"
+		echo -e "Restoring VE_ROOT:\t\t$VE_ROOT"
+	fi
+	echo -e "Confirm restore:\t\t$CONFIRM"
+	echo -e "Delete Backup Snapshot:\t\t$DELETE_BACKUP_SNAPSHOT" 
+	echo "---";
 }
 
 for i in "$@"
@@ -57,12 +68,6 @@ case $i in
     --vzdir=*)
     	VZDIR=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
-    --archive=*)
-    	ARCHIVE=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
-    ;;
-    --container=*)
-    	CONTAINER=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
-    ;;
     --confirm=*)
     	CONFIRM=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
@@ -70,7 +75,11 @@ case $i in
     DELETE_BACKUP_SNAPSHOT=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     *)
-    	# Parse CTIDs here
+    	# Parse ARCHIVE and CTIDs here
+	if [[ ! $i =~ ^\- ]]; then
+		ARCHIVE=$CONTAINER
+		CONTAINER=$i
+	fi
     ;;
 esac
 done
@@ -81,6 +90,11 @@ if [ "x"$ARCHIVE == "x" -o "x"$CONTAINER == "x" ]; then
     show_usage;
     exit 0;
 fi
+if [[ ! $CONTAINER =~ ^[0-9]+$ ]]; then
+    show_usage;
+    exit 0;
+fi
+
 
 ARCHIVE=`readlink -f $ARCHIVE`;
 
@@ -99,47 +113,23 @@ else
 fi
 VE_DUMP=$(VEID=$CTID; source /etc/vz/vz.conf; echo $DUMPDIR)
 
-echo -e "Archive to restore:\t\t$ARCHIVE"
-echo -e "Container to restore to:\t\t$CONTAINER"
-echo -e "Confirm restore:\t\t$CONFIRM"
-echo -e "Restoring VZ to:\t\t$VZDIR"
+show_param;
 echo
-
-
-echo "Pre-Restore Checks.."
-echo -n "Checking if container private directory ($VE_PRIVATE) already exists.."
 
 if [ -d $VE_PRIVATE ]; then
-    echo "yes, aborting"
+    echo "Container private directory ($VE_PRIVATE) already exists, aborting"
     exit 0;
-else
-    echo "no"
-    echo "$VE_PRIVATE directory will be created during restore"
 fi
-
-echo -n "Checking if container root directory ($VE_ROOT) already exists.."
-
 if [ -d $VE_ROOT ]; then
-    echo "yes, aborting"
+    echo "Container root directory ($VE_ROOT) already exists, aborting"
     exit 0;
-else
-    echo "no"
-    echo "$VE_ROOT directory will be created during restore"
 fi
-
-echo -n "Checking if container config file (/etc/vz/conf/$CTID.conf) already exists.."
-
 if [ -d "/etc/vz/conf/$CTID.conf" ]; then
-    echo "yes, aborting"
+    echo "Container config file (/etc/vz/conf/$CTID.conf) already exists, aborting"
     exit 0;
-else
-    echo "no"
-    echo "/etc/vz/conf/$CTID.conf will be restored from backup"
 fi
 
-echo
 echo "Actions taken for restore:"
-
 echo "mkdir $VE_ROOT"
 echo "mkdir $VE_PRIVATE"
 echo "cd $VE_PRIVATE"
@@ -158,10 +148,10 @@ if [ "x"$CONFIRM == "xyes" ]; then
 fi
 
 echo "Creating directory $VE_ROOT"
-mkdir $VE_ROOT
+mkdir -p $VE_ROOT
 
 echo "Creating direcotry $VE_PRIVATE"
-mkdir $VE_PRIVATE
+mkdir -p $VE_PRIVATE
 
 echo "cd into $VE_PRIVATE"
 cd $VE_PRIVATE
@@ -192,7 +182,7 @@ for f in $(ls -1 dump/{$BACKUP_ID}.ve.* 2>/dev/null)
 do
     echo $f
     CONF_EXT=${f##*.}
-    echo mv $f /etc/vz/conf/$CTID.$CONF_EXT
+    mv $f /etc/vz/conf/$CTID.$CONF_EXT.vzprestore
 done
 
 # Look for possible dump
