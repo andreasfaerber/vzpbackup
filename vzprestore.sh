@@ -82,6 +82,8 @@ if [ "x"$ARCHIVE == "x" -o "x"$CONTAINER == "x" ]; then
     exit 0;
 fi
 
+ARCHIVE=`readlink -f $ARCHIVE`;
+
 if [ ! -f $ARCHIVE ]; then
     echo "Archive $ARCHIVE does not exist or is inaccessible"
     exit 1;
