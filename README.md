@@ -13,13 +13,13 @@ OpenVZ wiki page regarding image backup:
 
 ```
 Usage: ./vzpbackup.sh
-[--suspend=<yes/no>]
-[--backup-dir=<Backup-Directory>]
-[--work-dir=<Temp-Directory>]
-[--compress=<no/pz/bz/pbz/tbz/gz/tgz/xz/txz>]
-[--compact]
-[--all]
-<CTID> <CTID>
+	[--suspend=<yes/no>]
+	[--backup-dir=<Backup-Directory>]
+	[--work-dir=<Temp-Directory>]
+	[--compress=<no/pz/bz/pbz/tbz/gz/tgz/xz/txz>]
+	[--compact]
+	[--all]
+	<CTID> <CTID>
 ```
 
 Backup a container with container ID 200:
@@ -86,11 +86,15 @@ Options:
 
 ```
 Usage: ./vzprestore.sh
-[--vzdir=<Directory to restore VE_PRIVATE and VE_ROOT to>]
-[--confirm=<yes/no>]
-[--delete-backup-snapshot=<yes/no>]
-<Filename>
-<CTID>
+	[--ip=<New IP>]
+	[--hostname=<New Hostname>]
+	[--description="<New Description>"]
+	[--vzdir=<Directory to restore VE_PRIVATE and VE_ROOT to>]
+	[--confirm=<yes/no>]
+	[--delete-backup-snapshot=<yes/no>]
+	<Filename> <CTID>
+
+You need to give at least <Filename> and <CTID> as arguments
 ```
 
 Restore a backup to a new container 250:
