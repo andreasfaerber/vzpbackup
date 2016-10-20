@@ -37,7 +37,7 @@ show_usage() {
 Usage: $0
 \t[--ip=<New IP>]
 \t[--hostname=<New Hostname>]
-\t[--description=<New Description>]
+\t[--description=\"<New Description>\"]
 \t[--vzdir=<Directory to restore VE_PRIVATE and VE_ROOT to>]
 \t[--confirm=<yes/no>]
 \t[--delete-backup-snapshot=<yes/no>]
