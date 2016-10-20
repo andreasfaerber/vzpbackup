@@ -25,7 +25,7 @@ DELETE_BACKUP_SNAPSHOT=yes
 ## VARIABLES
 ##
 
-TIMESTAMP=`date '+%Y%m%d-%H%M%S'`
+VZPDATE=`date '+%Y-%m-%d %H:%M:%S'`
 VZLIST_CMD=/usr/sbin/vzlist
 VZCTL_CMD=/usr/sbin/vzctl
 VZDIR=
@@ -184,11 +184,14 @@ BACKUP_ID=$(cat $VE_PRIVATE/vzpbackup_snapshot)
 echo BACKUP_ID: $BACKUP_ID
 SRC_VE_CONF="dump/{$BACKUP_ID}.ve.conf"
 echo "SRC VE CONF: $SRC_VE_CONF"
-mv $SRC_VE_CONF /etc/vz/conf/$CTID.conf.new
-egrep -v '^(VE_ROOT|VE_PRIVATE)' /etc/vz/conf/$CTID.conf.new > /etc/vz/conf/$CTID.conf
-echo "VE_ROOT=$VE_ROOT" >> /etc/vz/conf/$CTID.conf
-echo "VE_PRIVATE=$VE_PRIVATE" >> /etc/vz/conf/$CTID.conf
-rm /etc/vz/conf/$CTID.conf.new
+
+CFG=`egrep -v '^(VE_ROOT|VE_PRIVATE)' $SRC_VE_CONF`;
+ADD="\n\n# Restored using vzpbackup at $VZPDATE from file '$ARCHIVE'\n";
+ADD+="VE_ROOT=$VE_ROOT\n";
+ADD+="VE_PRIVATE=$VE_PRIVATE\n";
+
+echo -e "$CFG$ADD" > /etc/vz/conf/$CTID.conf
+rm $SRC_VE_CONF;
 
 for f in $(ls -1 dump/{$BACKUP_ID}.ve.* 2>/dev/null)
 do
