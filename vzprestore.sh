@@ -19,13 +19,15 @@
 ARCHIVE=
 CONTAINER=
 CONFIRM=yes
-DELETE_BACKUP_SNAPSHOT=no
+DELETE_BACKUP_SNAPSHOT=yes
 
 ##
 ## VARIABLES
 ##
 
-TIMESTAMP=`date '+%Y%m%d%H%M%S'`
+TIMESTAMP=`date '+%Y%m%d-%H%M%S'`
+VZLIST_CMD=/usr/sbin/vzlist
+VZCTL_CMD=/usr/sbin/vzctl
 VZDIR=
 
 ## VARIABLES END
@@ -206,9 +208,9 @@ else
 fi
 
 if [ "x"$DELETE_BACKUP_SNAPSHOT == "xyes" ]; then
-    echo "Deleting backup snapshot.."
-    vzctl snapshot-switch $CTID --id $BACKUP_ID
-    vzctl snapshot-delete $CTID --id $BACKUP_ID
+	echo "Deleting backup snapshot.."
+	$VZCTL_CMD snapshot-switch $CTID --id $BACKUP_ID
+	$VZCTL_CMD snapshot-delete $CTID --id $BACKUP_ID
 fi
 
-vzlist $CTID
+$VZLIST_CMD $CTID
