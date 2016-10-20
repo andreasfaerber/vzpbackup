@@ -1,3 +1,11 @@
+2016-10-20 makss
+
+	* Added local and global config
+	* New options for restore: ip, hostname, description
+	* Change options vzprestore.sh
+	* Removed --ttl option
+	* Minor improvements
+
 2015-11-18 Andreas Faerber <af@maeh.org>
 
 	* Added notice about the --ttl option to be removed beginning of
