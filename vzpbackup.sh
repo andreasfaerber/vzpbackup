@@ -61,6 +61,21 @@ contains() {
     return 0
 }
 
+show_usage() {
+	echo -e "--------------------------------------------------------------------
+Usage: $0
+\t[--suspend=<yes/no>]
+\t[--backup-dir=<Backup-Directory>]
+\t[--work-dir=<Temp-Directory>]
+\t[--compress=<no/pz/bz/pbz/tbz/gz/tgz/xz/txz>]
+\t[--compact]
+\t[--all]
+\t<CTID> <CTID>
+--------------------------------------------------------------------
+Defaults:";
+	show_param;
+}
+
 show_param() {
 	echo "---";
 	echo -e "SUSPEND: \t\t$SUSPEND"
@@ -87,9 +102,7 @@ for i in "$@"
 do
 case $i in
     --help)
-		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--work-dir=<Temp-Directory>] [--compress=<no/pz/bz/pbz/tbz/gz/tgz/xz/txz>] [--compact] [--all] <CTID> <CTID>"
-		echo "Defaults:"
-		show_param;
+		show_usage;
 		exit 0;
     ;;
     --suspend=*)
