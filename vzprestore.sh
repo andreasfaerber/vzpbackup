@@ -19,33 +19,73 @@
 ARCHIVE=
 CONTAINER=
 CONFIRM=yes
-DELETE_BACKUP_SNAPSHOT=no
+DELETE_BACKUP_SNAPSHOT=yes
 
 ##
 ## VARIABLES
 ##
 
-TIMESTAMP=`date '+%Y%m%d%H%M%S'`
+VZPDATE=`date '+%Y-%m-%d %H:%M:%S'`
+VZLIST_CMD=/usr/sbin/vzlist
+VZCTL_CMD=/usr/sbin/vzctl
 VZDIR=
 
 ## VARIABLES END
 
 show_usage() {
-    echo "Usage: $0 --archive=<Filename> --container=<CTID to restore to> [--vzdir=<Directory to restore VE_PRIVATE and VE_ROOT to>] [--confirm=<yes/no>] [--delete-backup-snapshot=<yes/no>]"
-    echo "Defaults:"
-    echo -e "Archive:\t\t\tNONE"
-    echo -e "Container:\t\t\tNONE"
-    echo -e "Confirm:\t\t\tYes"
-    echo -e "Delete Backup Snapshot:\t\tNo" 
-    echo -e "VZ Directory (for VE_ROOT and VE_PRIVATE):\tGlobal Default"
-    echo
-    echo "Note: Deleting the backup snapshot causes a switch to and a deletion"
-    echo "      of the snapshot taken during backup. Doing so will cause any"
-    echo "      running container to be rebooted. You will not be able to"
-    echo "      resume the container from a suspended state."
-    echo
-    echo "You need to give at least --archive and --container as arguments"
+	echo -e "--------------------------------------------------------------------
+Usage: $0
+\t[--ip=<New IP>]
+\t[--hostname=<New Hostname>]
+\t[--description=\"<New Description>\"]
+\t[--vzdir=<Directory to restore VE_PRIVATE and VE_ROOT to>]
+\t[--confirm=<yes/no>]
+\t[--delete-backup-snapshot=<yes/no>]
+\t<Filename> <CTID>
+
+You need to give at least <Filename> and <CTID> as arguments
+--------------------------------------------------------------------
+Defaults:";
+	show_param;
+	echo "Note: Deleting the backup snapshot causes a switch to and a deletion
+      of the snapshot taken during backup. Doing so will cause any
+      running container to be rebooted. You will not be able to
+      resume the container from a suspended state.";
 }
+
+show_param() {
+	echo "---";
+	echo -e "Filename:\t\t\t$ARCHIVE";
+	echo -e "Restore to container:\t\t$CONTAINER";
+	if [ ! -z "$VZIP" ]; then
+		echo -e "New IP:\t\t\t\t$VZIP";
+	fi
+	if [ ! -z "$VZHOSTNAME" ]; then
+		echo -e "New HOSTNAME:\t\t\t$VZHOSTNAME";
+	fi
+	if [ ! -z "$VZDESCRIPTION" ]; then
+		echo -e "New DESCRIPTION:\t\t$VZDESCRIPTION";
+	fi
+	if [ "x"$VE_PRIVATE == "x" ]; then
+		echo -e "Restoring VZ to:\t\tGlobal Default";
+	else
+		echo -e "Restoring VE_PRIVATE:\t\t$VE_PRIVATE";
+		echo -e "Restoring VE_ROOT:\t\t$VE_ROOT";
+	fi
+	echo -e "Confirm restore:\t\t$CONFIRM";
+	echo -e "Delete Backup Snapshot:\t\t$DELETE_BACKUP_SNAPSHOT";
+	echo "---";
+}
+
+## Get global and local config, if there exists
+if [ -f "/etc/vz/vzpbackup.conf" ]; then
+	source "/etc/vz/vzpbackup.conf";
+fi
+
+if [ -f "./vzpbackup.conf" ]; then
+	source "./vzpbackup.conf";
+fi
+
 
 for i in "$@"
 do
@@ -54,14 +94,17 @@ case $i in
     show_usage;
     exit 0;
     ;;
+    --ip=*)
+    	VZIP=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    ;;
+    --hostname=*)
+    	VZHOSTNAME=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    ;;
+    --description=*)
+    	VZDESCRIPTION=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
+    ;;
     --vzdir=*)
     	VZDIR=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
-    ;;
-    --archive=*)
-    	ARCHIVE=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
-    ;;
-    --container=*)
-    	CONTAINER=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     --confirm=*)
     	CONFIRM=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
@@ -70,7 +113,11 @@ case $i in
     DELETE_BACKUP_SNAPSHOT=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
     ;;
     *)
-    	# Parse CTIDs here
+    	# Parse ARCHIVE and CTIDs here
+	if [[ ! $i =~ ^\- ]]; then
+		ARCHIVE=$CONTAINER
+		CONTAINER=$i
+	fi
     ;;
 esac
 done
@@ -81,6 +128,13 @@ if [ "x"$ARCHIVE == "x" -o "x"$CONTAINER == "x" ]; then
     show_usage;
     exit 0;
 fi
+if [[ ! $CONTAINER =~ ^[0-9]+$ ]]; then
+    show_usage;
+    exit 0;
+fi
+
+
+ARCHIVE=`readlink -f $ARCHIVE`;
 
 if [ ! -f $ARCHIVE ]; then
     echo "Archive $ARCHIVE does not exist or is inaccessible"
@@ -97,55 +151,22 @@ else
 fi
 VE_DUMP=$(VEID=$CTID; source /etc/vz/vz.conf; echo $DUMPDIR)
 
-echo -e "Archive to restore:\t\t$ARCHIVE"
-echo -e "Container to restore to:\t\t$CONTAINER"
-echo -e "Confirm restore:\t\t$CONFIRM"
-echo -e "Restoring VZ to:\t\t$VZDIR"
-echo
+show_param;
 
-
-echo "Pre-Restore Checks.."
-echo -n "Checking if container private directory ($VE_PRIVATE) already exists.."
 
 if [ -d $VE_PRIVATE ]; then
-    echo "yes, aborting"
+    echo "Container private directory ($VE_PRIVATE) already exists, aborting"
     exit 0;
-else
-    echo "no"
-    echo "$VE_PRIVATE directory will be created during restore"
 fi
-
-echo -n "Checking if container root directory ($VE_ROOT) already exists.."
-
 if [ -d $VE_ROOT ]; then
-    echo "yes, aborting"
+    echo "Container root directory ($VE_ROOT) already exists, aborting"
     exit 0;
-else
-    echo "no"
-    echo "$VE_ROOT directory will be created during restore"
 fi
-
-echo -n "Checking if container config file (/etc/vz/conf/$CTID.conf) already exists.."
-
 if [ -d "/etc/vz/conf/$CTID.conf" ]; then
-    echo "yes, aborting"
+    echo "Container config file (/etc/vz/conf/$CTID.conf) already exists, aborting"
     exit 0;
-else
-    echo "no"
-    echo "/etc/vz/conf/$CTID.conf will be restored from backup"
 fi
 
-echo
-echo "Actions taken for restore:"
-
-echo "mkdir $VE_ROOT"
-echo "mkdir $VE_PRIVATE"
-echo "cd $VE_PRIVATE"
-echo "Extract backup archive into $VE_PRIVATE"
-echo "Create container config /etc/vz/conf/$CTID.conf"
-echo "Amend container config VE_ROOT: $VE_ROOT"
-echo "Amend container config VE_PRIVATE: $VE_PRIVATE"
-echo
 
 if [ "x"$CONFIRM == "xyes" ]; then
     read -p "Confirm restore (yes/no): " INPUT
@@ -155,11 +176,11 @@ if [ "x"$CONFIRM == "xyes" ]; then
     fi
 fi
 
-echo "Creating directory $VE_ROOT"
-mkdir $VE_ROOT
+echo -e "\nCreating directory $VE_ROOT";
+mkdir -p $VE_ROOT
 
 echo "Creating direcotry $VE_PRIVATE"
-mkdir $VE_PRIVATE
+mkdir -p $VE_PRIVATE
 
 echo "cd into $VE_PRIVATE"
 cd $VE_PRIVATE
@@ -180,18 +201,34 @@ BACKUP_ID=$(cat $VE_PRIVATE/vzpbackup_snapshot)
 echo BACKUP_ID: $BACKUP_ID
 SRC_VE_CONF="dump/{$BACKUP_ID}.ve.conf"
 echo "SRC VE CONF: $SRC_VE_CONF"
-mv $SRC_VE_CONF /etc/vz/conf/$CTID.conf.new
-egrep -v '^(VE_ROOT|VE_PRIVATE)' /etc/vz/conf/$CTID.conf.new > /etc/vz/conf/$CTID.conf
-echo "VE_ROOT=$VE_ROOT" >> /etc/vz/conf/$CTID.conf
-echo "VE_PRIVATE=$VE_PRIVATE" >> /etc/vz/conf/$CTID.conf
-rm /etc/vz/conf/$CTID.conf.new
 
-for f in $(ls -1 dump/{$BACKUP_ID}.ve.* 2>/dev/null)
-do
-    echo $f
-    CONF_EXT=${f##*.}
-    echo mv $f /etc/vz/conf/$CTID.$CONF_EXT
-done
+# New .conf
+	CFG=`egrep -v '^(VE_ROOT|VE_PRIVATE)' $SRC_VE_CONF`;
+	ADD="\n\n# Restored using vzpbackup at $VZPDATE from file '$ARCHIVE'\n";
+	ADD+="VE_ROOT=$VE_ROOT\n";
+	ADD+="VE_PRIVATE=$VE_PRIVATE\n";
+	if [ ! -z "$VZHOSTNAME" ]; then
+		CFG=`echo "$CFG" | egrep -v '^HOSTNAME'`;
+		ADD+="HOSTNAME=\"$VZHOSTNAME\"\n";
+	fi
+	if [ ! -z "$VZDESCRIPTION" ]; then
+		CFG=`echo "$CFG" | egrep -v '^DESCRIPTION'`;
+		ADD+="DESCRIPTION=\"$VZDESCRIPTION\"\n";
+	fi
+	if [ ! -z "$VZIP" ]; then
+		CFG=`echo "$CFG" | egrep -v '^IP_ADDRESS'`;
+		ADD+="IP_ADDRESS=\"$VZIP\"\n";
+	fi
+	echo -e "$CFG$ADD" > /etc/vz/conf/$CTID.conf
+	rm $SRC_VE_CONF;
+
+# Restore other files with .vzprestore suffix
+	for f in $(ls -1 dump/{$BACKUP_ID}.ve.* 2>/dev/null)
+	do
+		echo $f
+		CONF_EXT=${f##*.}
+		mv $f /etc/vz/conf/$CTID.$CONF_EXT.vzprestore
+	done
 
 # Look for possible dump
 DUMPFILE=${SRC_VE_CONF%.*.*}
@@ -204,9 +241,9 @@ else
 fi
 
 if [ "x"$DELETE_BACKUP_SNAPSHOT == "xyes" ]; then
-    echo "Deleting backup snapshot.."
-    vzctl snapshot-switch $CTID --id $BACKUP_ID
-    vzctl snapshot-delete $CTID --id $BACKUP_ID
+	echo "Deleting backup snapshot.."
+	$VZCTL_CMD snapshot-switch $CTID --id $BACKUP_ID
+	$VZCTL_CMD snapshot-delete $CTID --id $BACKUP_ID
 fi
 
-vzlist $CTID
+$VZLIST_CMD $CTID

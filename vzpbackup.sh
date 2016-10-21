@@ -27,7 +27,6 @@ BACKUP_DIR=/store/vzpbackup
 WORK_DIR=/store/vzpbackup
 COMPRESS=no
 COMPACT=0
-TTL=0
 
 ##
 ## VARIABLES
@@ -62,20 +61,48 @@ contains() {
     return 0
 }
 
+show_usage() {
+	echo -e "--------------------------------------------------------------------
+Usage: $0
+\t[--suspend=<yes/no>]
+\t[--backup-dir=<Backup-Directory>]
+\t[--work-dir=<Temp-Directory>]
+\t[--compress=<no/pz/bz/pbz/tbz/gz/tgz/xz/txz>]
+\t[--compact]
+\t[--all]
+\t<CTID> <CTID>
+--------------------------------------------------------------------
+Defaults:";
+	show_param;
+}
+
+show_param() {
+	echo "---";
+	echo -e "SUSPEND: \t\t$SUSPEND"
+	echo -e "BACKUP_DIR: \t\t$BACKUP_DIR"
+	echo -e "WORK_DIR: \t\t$WORK_DIR"
+	echo -e "COMPRESS: \t\t$COMPRESS"
+	echo -e "COMPACT: \t\t$COMPACT"
+	echo -e "CTIDs to backup: \t\t$CTIDS"
+	echo -e "EXCLUDE CTIDs: \t\t$EXCLUDE"
+	echo "---";
+}
 ## FUNCTIONS END
+
+## Get global and local config, if there exists
+if [ -f "/etc/vz/vzpbackup.conf" ]; then
+	source "/etc/vz/vzpbackup.conf";
+fi
+if [ -f "./vzpbackup.conf" ]; then
+	source "./vzpbackup.conf";
+fi
+
 
 for i in "$@"
 do
 case $i in
     --help)
-		echo "Usage: $0 [--suspend=<yes/no>] [--backup-dir=<Backup-Directory>] [--work-dir=<Temp-Directory>] [--compress=<no/pz/bz/pbz/tbz/gz/tgz/xz/txz>] [--compact] [--all] <CTID> <CTID>"
-		echo "Defaults:"
-		echo -e "SUSPEND:\t\t$SUSPEND"
-		echo -e "BACKUP_DIR:\t\t$BACKUP_DIR"
-    		echo -e "WORK_DIR:\t\t$WORK_DIR"
-		echo -e "COMPRESS:\t\t$COMPRESS"
-    		echo -e "TTL:\t\t\t$TTL"
-    		echo -e "COMPACT:\t\t$COMPACT"
+		show_usage;
 		exit 0;
     ;;
     --suspend=*)
@@ -94,9 +121,6 @@ case $i in
     --compress=*)
 		COMPRESS=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
 	;;
-    --ttl=*)
-    	TTL=`echo $i | sed 's/[-a-zA-Z0-9]*=//'`
-    ;;
     --compact)
         COMPACT=1
     ;;
@@ -110,25 +134,8 @@ case $i in
 esac
 done
 
-if [ "$TTL" -gt 0 ]; then
-  echo
-  echo "############################################################################"
-  echo "### NOTICE: The --ttl option will be removed in the next release as it's ###"
-  echo "### NOTICE: current implementation is rather unsafe. I will provide a    ###"
-  echo "### NOTICE: script to be run via cron to remove old backups safely       ###"
-  echo "### NOTICE: This will happen around beginning of December 2015           ###"
-  echo "############################################################################"
-  echo
-fi
+show_param;
 
-echo -e "SUSPEND: \t\t$SUSPEND"
-echo -e "BACKUP_DIR: \t\t$BACKUP_DIR"
-echo -e "WORK_DIR: \t\t$WORK_DIR"
-echo -e "COMPRESS: \t\t$COMPRESS"
-echo -e "COMPACT: \t\t$COMPACT"
-echo -e "BACKUP TTL: \t\t$TTL"
-echo -e "CTIDs to backup: \t\t$CTIDS"
-echo -e "EXCLUDE CTIDs: \t\t$EXCLUDE"
 
 if [ "x$SUSPEND" != "xyes" ]; then
     CMDLINE="${CMDLINE} --skip-suspend"
@@ -233,12 +240,6 @@ if grep -w "$CTID" <<< `$VZLIST_CMD -a -Hoctid` &> /dev/null; then
 	if [ "$BACKUP_DIR" != "$WORK_DIR" ]; then
 		echo "Moving backup file"
 		mv $WORK_DIR/$BACKUP_FILE $BACKUP_DIR/$BACKUP_FILE
-	fi
-
-	# Delete old backups
-	if [ "$TTL" -gt 0 ]; then
-		echo "Deleting old backup files..."
-		find $BACKUP_DIR/* -mtime +${TTL} -exec rm {} \;
 	fi
 
         echo "BACKUP FILE: $BACKUP_DIR/$BACKUP_FILE"
